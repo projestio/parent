@@ -4,7 +4,7 @@
 
   <groupId>com.github.projestio</groupId>
   <artifactId>parent</artifactId>
-  <version>2</version>
+  <version>3-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Projestio - Parent</name>
@@ -50,11 +50,11 @@
     <url>https://projestio.github.io/parent/</url>
     <connection>scm:git:https://github.com/projestio/parent.git</connection>
     <developerConnection>scm:git:https://github.com/projestio/parent.git</developerConnection>
-    <tag>release/v2</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <properties>
-    <project.build.outputTimestamp>1710880881</project.build.outputTimestamp>
+    <project.build.outputTimestamp>1710880885</project.build.outputTimestamp>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.sourceEncoding>UTF-8</project.reporting.sourceEncoding>
