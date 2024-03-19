@@ -1,6 +1,79 @@
-== Projestio Parent
+= Projestio Parent
+
 Provides properties, attributes, and dependency and plugin management to
 be inherited by related projects.
+
+== Usage Notes
+
+The following XML will need to be applied to your local settings.xml and
+any inheriting project pom.xml files
+
+=== Local settings.xml File
+
+You will need to have a personal access token with `read:packages` permissions.
+The value of this token will serve as the password stored on your local
+machine.
+
+For more information on GitHub Packages permissions, see
+link:https://docs.github.com/en/packages/learn-github-packages/about-permissions-for-github-packages[GitHub Documentation - About permissions for GitHub Packages].
+
+For information on encrypting the personal access token within settings.xml,
+see
+link:https://maven.apache.org/guides/mini/guide-encryption.html[Maven Docs - Password Encryption].
+
+.Server credentials in local settings.xml file
+[source,xml]
+----
+<settings>
+  <servers>
+    <server>
+      <id>projestio-parent</id>
+      <username>YOUR_GITHUB_USERNAME_HERE</username>
+      <password>A_CLASSIC_PERSONAL_ACCESS_TOKEN_VALUE_HERE</password>
+    </server>
+    <server>
+      <id>projestio-specifications</id>
+      <username>YOUR_GITHUB_USERNAME_HERE</username>
+      <password>A_CLASSIC_PERSONAL_ACCESS_TOKEN_VALUE_HERE</password>
+    </server>
+  </servers>
+</settings>
+----
+
+=== Inheriting Project pom.xml Files
+
+.Parent definition for inheriting pom.xml files
+[source,xml]
+----
+<parent>
+  <groupId>com.github.projestio</groupId>
+  <artifactId>parent</artifactId>
+  <version>2</version>
+  <relativePath/>
+</parent>
+----
+
+.Repository definition for inheriting pom.xml files
+[source,xml]
+----
+<repositories>
+  <repository>
+    <id>projestio-parent</id>
+    <name>Projestio Parent Repository</name>
+    <url>https://maven.pkg.github.com/projestio/parent</url>
+    <layout>default</layout>
+    <releases>
+      <enabled>true</enabled>
+      <updatePolicy>never</updatePolicy>
+    </releases>
+    <snapshots>
+      <enabled>false</enabled>
+    </snapshots>
+  </repository>
+</repositories>
+----
+
+== Build Notes
 
 Run `./mvnw versions:display-property-updates` to check for
 updates across properties defined in the parent pom

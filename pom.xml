@@ -33,6 +33,19 @@
     </developer>
   </developers>
 
+  <issueManagement>
+    <system>GitHub</system>
+    <url>https://github.com/projestio/parent/issues</url>
+  </issueManagement>
+
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://raw.githubusercontent.com/projestio/parent/main/LICENSE</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
   <scm>
     <url>https://projestio.github.io/parent/</url>
     <connection>scm:git:https://github.com/projestio/parent.git</connection>
@@ -695,10 +708,6 @@
       </activation>
 
       <properties>
-        <jam.container-image.tag-suffix>
-          -native
-        </jam.container-image.tag-suffix>
-
         <quarkus.native.container-build>true</quarkus.native.container-build>
         <quarkus.native.container-runtime>
           podman-rootless
