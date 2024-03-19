@@ -1,0 +1,17 @@
+.DS_STORE
+Thumbs.db
+
+/release.properties
+pom.xml.next
+pom.xml.releaseBackup
+pom.xml.tag
+
+/.idea/jarRepositories.xml
+/.idea/misc.xml
+/.idea/modules.xml
+*.iml
+.attach_pid*
+
+/.mvn/wrapper/maven-wrapper.jar
+
+target/

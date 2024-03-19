@@ -1,0 +1,208 @@
+name: Perform Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Dry Run
+        required: false
+        type: boolean
+        default: false
+      ignore-snapshots:
+        description: Ignore Snapshot Dependencies
+        required: false
+        type: boolean
+        default: false
+      release-version:
+        description: Release Version
+        required: false
+        type: string
+      next-version:
+        description: Next Development Version
+        required: false
+        type: string
+
+jobs:
+  maven-build-deploy:
+    name: Maven Build and Tag
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      packages: write
+
+    outputs:
+      release-sha: ${{ steps.release-sha.outputs.value }}
+      release-tag: ${{ steps.release-tag.outputs.value }}
+
+    steps:
+      - name: Checkout Project
+        uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+
+      - name: Configure Git User
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Set Up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          settings-path: ${{ github.workspace }}
+          server-id: github
+
+      - name: Determine Home Directory
+        id: find-home
+        run: |
+          echo "home=$HOME" >> $GITHUB_OUTPUT
+
+      - name: Cache Maven Local Repo
+        id: cache-maven
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.find-home.outputs.home }}/.m2/repository
+          key: ${{ runner.os }}-${{ runner.arch }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-maven-
+
+      - name: Configure Maven Repository Filters
+        run: |
+          /bin/sh -x "${{ github.workspace }}/.mvn/filter/install-filters.sh"
+
+      - name: Configure Git User
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Configure SCM Settings in POM
+        run: >-
+          sed
+          -i
+          -e '/<scm>/,/<\/scm>/ s;<url>.*</url>;<url>https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/</url>;'
+          -e '/<scm>/,/<\/scm>/ s;<connection>.*</connection>;<connection>scm:git:${{ github.server_url }}/${{ github.repository }}.git</connection>;'
+          -e '/<scm>/,/<\/scm>/ s;<developerConnection>.*</developerConnection>;<developerConnection>scm:git:${{ github.server_url }}/${{ github.repository }}.git</developerConnection>;'
+          pom.xml
+
+      - name: Pre-Download Maven Dependencies and Plugins
+        if: ${{ success() && steps.cache-maven.outputs.cache-hit != 'true' }}
+        run: >-
+          ./mvnw
+          --settings ${{ github.workspace }}/settings.xml
+          --batch-mode
+          dependency:go-offline
+          -P-local-dev
+
+      - name: Prepare Maven Release (build code and create tag)
+        id: release-prepare
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          ./mvnw
+          --settings ${{ github.workspace }}/settings.xml
+          --batch-mode
+          release:prepare
+          ${{ format('-DdryRun={0}', inputs.dry-run) }}
+          ${{ inputs.next-version && format('-DdevelopmentVersion={0}', inputs.next-version) || '' }}
+          ${{ inputs.release-version && format('-DreleaseVersion={0}', inputs.release-version) || '' }}
+          ${{ inputs.ignore-snapshots && '-DignoreSnapshots=true' || '' }}
+          -DcheckModificationExcludeList=pom.xml
+          -Dusername=${{ github.token }}
+          -DpreparationGoals='clean verify'
+          -Darguments='
+          --settings ${{ github.workspace }}/settings.xml
+          -DaltDeploymentRepository=github::https://maven.pkg.github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}
+          -P-local-dev
+          '
+          -P-local-dev
+
+      - name: Perform Maven Release (deploy artifacts)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          ./mvnw
+          --settings ${{ github.workspace }}/settings.xml
+          --batch-mode
+          release:perform
+          -DlocalCheckout=true
+          ${{ format('-DdryRun={0}', inputs.dry-run) }}
+          -Dusername=${{ github.token }}
+          -Dgoals='deploy'
+          -Darguments='
+          --settings ${{ github.workspace }}/settings.xml
+          -DaltDeploymentRepository=github::https://maven.pkg.github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}
+          -P-local-dev
+          '
+          -P-local-dev
+
+      - name: Rollback Maven Release unless Success
+        if: ${{ !success() && !inputs.dry-run && steps.release-prepare.outcome == 'success' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          ./mvnw
+          --settings ${{ github.workspace }}/settings.xml
+          --batch-mode
+          release:rollback
+          -Dusername=${{ github.token }}
+          -P-local-dev
+
+      - name: Determine Release Commit SHA
+        id: release-sha
+        run: |
+          echo "value=$(git rev-parse HEAD^)" >> $GITHUB_OUTPUT
+
+      - name: Determine Release Tag
+        id: release-tag
+        env:
+          RELEASE_SHA: ${{ steps.release-sha.outputs.value }}
+        run: |
+          echo "value=$(git describe --tags --abbrev=0 $RELEASE_SHA 2>&1 || echo $RELEASE_SHA)" >> $GITHUB_OUTPUT
+
+  create-github-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+
+    if: ${{ ! failure() && ! cancelled() && !inputs.dry-run }}
+
+    permissions:
+      contents: write
+      pull-requests: read
+
+    needs:
+      - maven-build-deploy
+
+    steps:
+      - name: Checkout Project
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.maven-build-deploy.outputs.release-tag }}
+          fetch-tags: true
+
+      - name: Create Draft Release from Tag
+        uses: spenserblack/actions-tag-to-release@v3
+        with:
+          tag: ${{ needs.maven-build-deploy.outputs.release-tag }}
+          tag-as-title: true
+          draft: true
+          dry-run: ${{ inputs.dry-run }}
+          prerelease: auto
+          prerelease-pattern: release/v*.*.*-*
+
+      # TODO: Build changelog; JReleaser maven plugin, possibly?
+
+      - name: Set Release Metadata and Remove Draft
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ needs.maven-build-deploy.outputs.release-tag }}
+          allowUpdates: true
+          updateOnlyUnreleased: true
+
+          omitNameDuringUpdate: true
+          omitPrereleaseDuringUpdate: true
+          generateReleaseNotes: false
+
+          draft: false
+          #body: TODO: set body as changelog

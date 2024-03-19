@@ -1,0 +1,11 @@
+== Projestio Parent
+Provides properties, attributes, and dependency and plugin management to
+be inherited by related projects.
+
+Run `./mvnw versions:display-property-updates` to check for
+updates across properties defined in the parent pom
+
+Run with `-Dmaven.plugin.validation=VERBOSE` to determine which plugins
+(if any) have validation errors.
+
+Run `./mvnw versions:display-plugin-updates` to check for plugin updates

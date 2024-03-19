@@ -1,0 +1,47 @@
+name: Maven Dependency Tree Snapshot
+
+on:
+  workflow_dispatch: { }
+  push:
+    branches:
+      - main
+    paths:
+      - '**/pom.xml'
+
+jobs:
+  dependency-tree:
+    name: Submit Dependency Tree Snapshot
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Determine Home Directory
+        id: find-home
+        run: |
+          echo "home=$HOME" >> $GITHUB_OUTPUT
+
+      - name: Cache Maven Local Repo
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.find-home.outputs.home }}/.m2/repository
+          key: ${{ runner.os }}-${{ runner.arch }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-maven-
+
+      - name: Configure Maven Repository Filters
+        run: |
+          /bin/sh -x "${{ github.workspace }}/.mvn/filter/install-filters.sh"
+
+      - name: Submit Dependency Snapshot
+        uses: advanced-security/maven-dependency-submission-action@v3
