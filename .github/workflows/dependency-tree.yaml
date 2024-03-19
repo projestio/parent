@@ -44,4 +44,4 @@ jobs:
           /bin/sh -x "${{ github.workspace }}/.mvn/filter/install-filters.sh"
 
       - name: Submit Dependency Snapshot
-        uses: advanced-security/maven-dependency-submission-action@v3
+        uses: advanced-security/maven-dependency-submission-action@v4
