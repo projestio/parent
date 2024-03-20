@@ -102,7 +102,7 @@
     <!-- Other dependency versions -->
     <version.imposter>3.35.1</version.imposter>
     <version.junit>5.10.2</version.junit>
-    <version.lombok>1.18.30</version.lombok>
+    <version.lombok>1.18.32</version.lombok>
     <version.mockito>5.11.0</version.mockito>
     <version.swagger-annotations>1.6.14</version.swagger-annotations>
 
