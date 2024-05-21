@@ -95,7 +95,7 @@
     <version.build-helper-maven-plugin>3.5.0</version.build-helper-maven-plugin>
     <version.depgraph-maven-plugin>4.0.3</version.depgraph-maven-plugin>
     <version.jandex-maven-plugin>3.1.7</version.jandex-maven-plugin>
-    <version.openapi-generator-maven-plugin>7.4.0</version.openapi-generator-maven-plugin>
+    <version.openapi-generator-maven-plugin>7.6.0</version.openapi-generator-maven-plugin>
     <version.properties-maven-plugin>1.2.1</version.properties-maven-plugin>
     <version.versions-maven-plugin>2.16.2</version.versions-maven-plugin>
 
